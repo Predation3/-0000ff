@@ -26,6 +26,36 @@
       align-items: center;
 
       overflow: hidden;
+
+      animation: pageIn 2s ease forwards;
+    }
+
+    @keyframes pageIn {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
+    }
+
+    /* 暗転 */
+    #fade {
+      position: fixed;
+      inset: 0;
+
+      background: #000;
+
+      opacity: 0;
+      pointer-events: none;
+
+      z-index: 999;
+
+      transition: opacity 2.5s ease;
+    }
+
+    #fade.dark {
+      opacity: 1;
     }
 
     /* 不気味な霧 */
@@ -33,9 +63,16 @@
       content: "";
       position: fixed;
       inset: -50%;
+
       background:
-        radial-gradient(circle, rgba(255,255,255,0.04), transparent 35%);
+        radial-gradient(
+          circle,
+          rgba(255,255,255,0.04),
+          transparent 35%
+        );
+
       animation: fog 12s infinite alternate;
+
       pointer-events: none;
     }
 
@@ -43,6 +80,7 @@
       from {
         transform: translate(-5%, -3%) scale(1);
       }
+
       to {
         transform: translate(5%, 3%) scale(1.15);
       }
@@ -51,13 +89,16 @@
     .container {
       width: 90%;
       max-width: 900px;
+
       text-align: center;
+
       position: relative;
       z-index: 1;
     }
 
     .binary {
       font-family: monospace;
+
       font-size: 16px;
       line-height: 1.8;
 
@@ -74,7 +115,9 @@
 
     .title {
       font-size: 24px;
+
       letter-spacing: 5px;
+
       margin-bottom: 30px;
 
       color: #ccc;
@@ -98,6 +141,7 @@
       color: white;
 
       font-size: 18px;
+
       text-align: center;
 
       outline: none;
@@ -105,7 +149,9 @@
 
     input:focus {
       border-color: #aaa;
-      box-shadow: 0 0 15px rgba(255,255,255,0.15);
+
+      box-shadow:
+        0 0 15px rgba(255,255,255,0.15);
     }
 
     button {
@@ -114,9 +160,11 @@
       padding: 12px 35px;
 
       background: #111;
+
       color: #ddd;
 
       border: 1px solid #555;
+
       border-radius: 4px;
 
       font-size: 16px;
@@ -126,13 +174,14 @@
 
     button:hover {
       background: #222;
-      box-shadow: 0 0 15px rgba(255,255,255,0.15);
+
+      box-shadow:
+        0 0 15px rgba(255,255,255,0.15);
     }
 
     #message {
       margin-top: 20px;
       min-height: 25px;
-
       color: #999;
     }
 
@@ -143,6 +192,8 @@
 </head>
 
 <body>
+
+  <div id="fade"></div>
 
   <div class="container">
 
@@ -180,40 +231,109 @@
 
   </div>
 
+
   <script>
-    function checkAnswer() {
+
+    /*
+      正解のSHA-256ハッシュ
+
+      元の答え：
+      きようはにじがきれい
+
+      → SHA-256
+    */
+    const correctHash =
+      "c51146399ac31cba6523f02fd0d1e30e566c6a258f13eae8e0af7b6de81cca39";
+
+
+    async function sha256(text) {
+
+      const encoder = new TextEncoder();
+
+      const data = encoder.encode(text);
+
+      const hashBuffer =
+        await crypto.subtle.digest("SHA-256", data);
+
+      const hashArray =
+        Array.from(new Uint8Array(hashBuffer));
+
+      return hashArray
+        .map(byte => byte.toString(16).padStart(2, "0"))
+        .join("");
+
+    }
+
+
+    async function checkAnswer() {
 
       const answer =
         document.getElementById("answer").value;
 
+      const fade =
+        document.getElementById("fade");
+
       const message =
         document.getElementById("message");
 
-      if (answer === "きようはにじがきれい") {
 
-        message.textContent = "正解";
+      /*
+        入力された答えをハッシュ化
+      */
+      const inputHash =
+        await sha256(answer);
 
-        // 次のページへ
+
+      /*
+        ハッシュ同士を比較
+      */
+      if (inputHash === correctHash) {
+
+        /*
+          正解しても「正解！」とは表示しない
+          そのままゆっくり暗転
+        */
+        fade.classList.add("dark");
+
+
+        /*
+          完全に暗くなったら次のページへ
+        */
         setTimeout(() => {
+
           window.location.href = "next.html";
-        }, 700);
+
+        }, 2500);
+
 
       } else {
 
-        message.textContent = "……違うようだ。";
-        message.className = "error";
+        message.textContent =
+          "……違うようだ。";
+
+        message.className =
+          "error";
 
       }
+
     }
 
-    // Enterキーでも回答できるようにする
-    document.getElementById("answer").addEventListener("keydown", function(event) {
 
-      if (event.key === "Enter") {
-        checkAnswer();
-      }
+    /*
+      Enterキーでも回答できる
+    */
+    document
+      .getElementById("answer")
+      .addEventListener("keydown", function(event) {
 
-    });
+        if (event.key === "Enter") {
+
+          checkAnswer();
+
+        }
+
+      });
+
   </script>
 
 </body>
