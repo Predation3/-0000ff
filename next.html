@@ -1,180 +1,498 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport"
       content="width=device-width, initial-scale=1.0">
+
 <title></title>
+
 <style>
+
 html,
 body {
+
   margin: 0;
+
   width: 100%;
   height: 100%;
+
   background: #000;
+
   overflow: hidden;
+
 }
+
+
 body {
+
   opacity: 0;
+
   animation: appear 3s ease forwards;
+
 }
+
+
 @keyframes appear {
+
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
+
 }
-/* ドット */
+
+
+/* =========================
+   ドット
+========================= */
+
 #dots {
+
   position: fixed;
+
   inset: 0;
+
   width: 100%;
   height: 100%;
+
 }
+
+
 .dot {
+
   position: absolute;
+
   width: 5px;
   height: 5px;
+
   border-radius: 50%;
+
   background: #aaa;
+
   opacity: 0.55;
+
   cursor: pointer;
+
   transition:
     opacity 0.2s,
     transform 0.2s;
+
 }
+
+
 .dot:hover {
+
   opacity: 1;
+
   transform: scale(1.5);
+
 }
-/* ヒント */
+
+
+/* =========================
+   ヒント
+========================= */
+
 #hint {
+
   position: fixed;
+
   left: 50%;
   top: 50%;
+
   transform: translate(-50%, -50%);
+
   width: 85%;
   max-width: 600px;
+
   padding: 25px;
+
   background: rgba(0,0,0,0.92);
+
   border: 1px solid #555;
+
   color: #ccc;
+
   text-align: center;
+
   font-size: 18px;
+
   line-height: 1.8;
+
   letter-spacing: 1px;
+
   opacity: 0;
+
   pointer-events: none;
+
   transition: opacity 1s ease;
+
   z-index: 10;
+
 }
+
+
 #hint.show {
+
   opacity: 1;
+
   pointer-events: auto;
+
 }
+
+
+/* =========================
+   コピー成功
+========================= */
+
+#copied {
+
+  position: fixed;
+
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  color: #ccc;
+
+  font-size: 20px;
+
+  letter-spacing: 2px;
+
+  opacity: 0;
+
+  pointer-events: none;
+
+  transition: opacity 0.5s ease;
+
+  z-index: 20;
+
+}
+
+
+#copied.show {
+
+  opacity: 1;
+
+}
+
 </style>
+
 </head>
+
+
 <body>
+
+
+<!-- ドットを置く場所 -->
+
 <div id="dots"></div>
+
+
+<!-- ヒント -->
+
 <div id="hint">
+
 さっきの文字を0から9まで当てはめてみよう
+
 </div>
+
+
+<!-- コピー成功メッセージ -->
+
+<div id="copied">
+
+コピーに成功しました。
+
+</div>
+
+
 <script>
+
+
+/* =========================
+   設定
+========================= */
+
+
 const dots =
   document.getElementById("dots");
+
+
 /*
   ドットの数
+
+  数字を大きくすると
+  ドットが増えます
 */
+
 const dotCount = 60;
+
+
 /*
   特殊なドット
-  0 = コピー
-  1 = ヒント
+
+  0番目 → コピー
+  1番目 → ヒント
 */
+
 const copyDotNumber = 0;
+
 const hintDotNumber = 1;
-/*
-  コピーする文字列
-*/
+
+
+/* =========================
+   コピーする文字
+========================= */
+
+
 const secretText =
 "るぼらのるさあるらるぼがあのるさがのひのそそぼのぼぼさががひあひあそがらららぼそるよあさぼよそさそあぼそのよがよよよぼさのそのががのさるがさひさそひそのるあのらるのあそひあるぼあらのがあひあらそあるのががああぼのそぼのらよあよそそあひよらぼさのぼぼががのあよさひひぼそらぼるさぼそあよささるがよあるがらひぼるるあがぼささるそぼのそよそるあらささののそよののらそがののあよそがそらるよらのあるさのよぼひそのるらがひらさがひそのらがのががよあのるさひそあぼそそひさがのらのあるがるぼそるぼぼぼさのさそののよひがひよあるそのよのらぼるよぼそがらるるるぼよぼあるさぼさよのさひのらるあひよささよよひがあののらひよそさそがあぼそぼひらそあさそさよひるぼががさそよるひ";
-/*
-  ドットを配置
-*/
+
+
+/* =========================
+   ドットを作る
+========================= */
+
+
 for (let i = 0; i < dotCount; i++) {
+
+
   const dot =
     document.createElement("div");
+
+
   dot.classList.add("dot");
+
+
+  /*
+    ランダムな場所に配置
+  */
+
   const x =
     Math.random() * 96 + 2;
+
   const y =
     Math.random() * 96 + 2;
-  dot.style.left = x + "%";
-  dot.style.top = y + "%";
+
+
+  dot.style.left =
+    x + "%";
+
+  dot.style.top =
+    y + "%";
+
+
   /*
-    コピー用
+    コピー用ドット
   */
+
   if (i === copyDotNumber) {
+
     dot.addEventListener(
       "click",
       copySecret
     );
+
   }
+
+
   /*
-    ヒント用
+    ヒント用ドット
   */
+
   else if (i === hintDotNumber) {
+
     dot.addEventListener(
       "click",
       showHint
     );
+
   }
+
+
+  /*
+    普通のドット
+
+    押しても何も起こらない
+  */
+
+  else {
+
+    dot.addEventListener(
+      "click",
+      function() {
+
+      }
+    );
+
+  }
+
+
   dots.appendChild(dot);
+
 }
-/*
-  コピー
-*/
+
+
+/* =========================
+   コピー
+========================= */
+
+
 async function copySecret() {
+
+
+  let success = false;
+
+
+  /*
+    通常のコピー
+  */
+
   try {
+
     await navigator.clipboard.writeText(
       secretText
     );
+
+    success = true;
+
   }
+
+
+  /*
+    コピーできなかった場合の予備
+  */
+
   catch (error) {
-    const textarea =
-      document.createElement("textarea");
-    textarea.value = secretText;
-    textarea.style.position = "fixed";
-    textarea.style.opacity = "0";
-    document.body.appendChild(
-      textarea
-    );
-    textarea.select();
-    document.execCommand("copy");
-    textarea.remove();
+
+
+    try {
+
+
+      const textarea =
+        document.createElement("textarea");
+
+
+      textarea.value =
+        secretText;
+
+
+      textarea.style.position =
+        "fixed";
+
+
+      textarea.style.opacity =
+        "0";
+
+
+      document.body.appendChild(
+        textarea
+      );
+
+
+      textarea.select();
+
+
+      success =
+        document.execCommand("copy");
+
+
+      textarea.remove();
+
+
+    }
+
+    catch (error) {
+
+      success = false;
+
+    }
+
   }
+
+
+  /*
+    コピー成功
+  */
+
+  if (success) {
+
+
+    const copied =
+      document.getElementById("copied");
+
+
+    copied.classList.add(
+      "show"
+    );
+
+
+    /*
+      2秒後に消す
+    */
+
+    setTimeout(() => {
+
+      copied.classList.remove(
+        "show"
+      );
+
+    }, 2000);
+
+  }
+
 }
-/*
-  ヒント表示
-*/
+
+
+/* =========================
+   ヒントを表示
+========================= */
+
+
 function showHint() {
-  document
-    .getElementById("hint")
-    .classList.add("show");
+
+
+  const hint =
+    document.getElementById("hint");
+
+
+  hint.classList.add(
+    "show"
+  );
+
 }
-/*
-  ヒントをタップすると閉じる
-*/
+
+
+/* =========================
+   ヒントを閉じる
+========================= */
+
+
 document
   .getElementById("hint")
   .addEventListener(
     "click",
     function() {
-      this.classList.remove("show");
+
+      this.classList.remove(
+        "show"
+      );
+
     }
   );
+
+
 </script>
+
 </body>
+
 </html>
