@@ -3,53 +3,218 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>riddle</title>
+
+  <title>謎解き</title>
+
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
-      background: #111;
-      color: white;
+      margin: 0;
+      min-height: 100vh;
+
+      background:
+        radial-gradient(circle at 50% 30%, #202020 0%, #080808 45%, #000000 100%);
+
+      color: #ddd;
       font-family: sans-serif;
+
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      overflow: hidden;
+    }
+
+    /* 不気味な霧 */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: -50%;
+      background:
+        radial-gradient(circle, rgba(255,255,255,0.04), transparent 35%);
+      animation: fog 12s infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes fog {
+      from {
+        transform: translate(-5%, -3%) scale(1);
+      }
+      to {
+        transform: translate(5%, 3%) scale(1.15);
+      }
+    }
+
+    .container {
+      width: 90%;
+      max-width: 900px;
       text-align: center;
-      padding: 40px 20px;
+      position: relative;
+      z-index: 1;
     }
+
+    .binary {
+      font-family: monospace;
+      font-size: 16px;
+      line-height: 1.8;
+
+      color: #aaa;
+
+      word-break: break-all;
+
+      margin-bottom: 45px;
+
+      text-shadow:
+        0 0 5px #555,
+        0 0 15px #222;
+    }
+
+    .title {
+      font-size: 24px;
+      letter-spacing: 5px;
+      margin-bottom: 30px;
+
+      color: #ccc;
+
+      text-shadow:
+        0 0 8px #777,
+        0 0 20px #333;
+    }
+
     input {
-      padding: 12px;
-      font-size: 16px;
-      margin-top: 20px;
+      width: 90%;
+      max-width: 500px;
+
+      padding: 15px;
+
+      background: rgba(0, 0, 0, 0.7);
+
+      border: 1px solid #555;
+      border-radius: 4px;
+
+      color: white;
+
+      font-size: 18px;
+      text-align: center;
+
+      outline: none;
     }
+
+    input:focus {
+      border-color: #aaa;
+      box-shadow: 0 0 15px rgba(255,255,255,0.15);
+    }
+
     button {
-      padding: 12px 20px;
+      margin-top: 15px;
+
+      padding: 12px 35px;
+
+      background: #111;
+      color: #ddd;
+
+      border: 1px solid #555;
+      border-radius: 4px;
+
       font-size: 16px;
-      margin-left: 5px;
+
+      cursor: pointer;
     }
-    #result {
+
+    button:hover {
+      background: #222;
+      box-shadow: 0 0 15px rgba(255,255,255,0.15);
+    }
+
+    #message {
       margin-top: 20px;
+      min-height: 25px;
+
+      color: #999;
+    }
+
+    .error {
+      color: #a66 !important;
     }
   </style>
 </head>
+
 <body>
-  <h1>第1問</h1>
-  <p>11100011 10000001 10001101 11100011 10000010 10001000 11100011 10000001 10000110 11100011 10000001 10101111 11100011 10000001 10101011 11100011 10000001 10011000 11100011 10000001 10001100 11100011 10000001 10001101 11100011 10000010 10001100 11100011 10000001 10000100。</p>
-  <input id="answer" type="text" placeholder="答えを入力">
-  <button onclick="checkAnswer()">回答</button>
-  <p id="result"></p>
+
+  <div class="container">
+
+    <div class="binary">
+      11100011 10000001 10001101
+      11100011 10000010 10001000
+      11100011 10000001 10000110
+      11100011 10000001 10101111
+      11100011 10000001 10101011
+      11100011 10000001 10011000
+      11100011 10000001 10001100
+      11100011 10000001 10001101
+      11100011 10000010 10001100
+      11100011 10000001 10000100
+    </div>
+
+    <div class="title">
+      答えを入力してください
+    </div>
+
+    <input
+      type="text"
+      id="answer"
+      placeholder="答えを入力..."
+      autocomplete="off"
+    >
+
+    <br>
+
+    <button onclick="checkAnswer()">
+      入力
+    </button>
+
+    <div id="message"></div>
+
+  </div>
+
   <script>
-    async function sha256(text) {
-      const data = new TextEncoder().encode(text);
-      const hash = await crypto.subtle.digest("SHA-256", data);
-      return [...new Uint8Array(hash)]
-        .map(b => b.toString(16).padStart(2, "0"))
-        .join("");
-    }
-    async function checkAnswer() {
-      const answer = document.getElementById("answer").value.trim();
-      const hash = await sha256(answer);
-      if (hash === "c51146399ac31cba6523f02fd0d1e30e566c6a258f13eae8e0af7b6de81cca39") {
-        document.getElementById("result").textContent = "正解！";
+    function checkAnswer() {
+
+      const answer =
+        document.getElementById("answer").value;
+
+      const message =
+        document.getElementById("message");
+
+      if (answer === "きようはにじがきれい") {
+
+        message.textContent = "正解";
+
+        // 次のページへ
+        setTimeout(() => {
+          window.location.href = "next.html";
+        }, 700);
+
       } else {
-        document.getElementById("result").textContent = "不正解";
+
+        message.textContent = "……違うようだ。";
+        message.className = "error";
+
       }
     }
+
+    // Enterキーでも回答できるようにする
+    document.getElementById("answer").addEventListener("keydown", function(event) {
+
+      if (event.key === "Enter") {
+        checkAnswer();
+      }
+
+    });
   </script>
+
 </body>
 </html>
