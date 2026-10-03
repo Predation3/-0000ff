@@ -1,340 +1,298 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>謎解き</title>
+<title>謎解き</title>
 
-  <style>
-    * {
-      box-sizing: border-box;
-    }
+<style>
+* {
+  box-sizing: border-box;
+}
 
-    body {
-      margin: 0;
-      min-height: 100vh;
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
 
-      background:
-        radial-gradient(circle at 50% 30%, #202020 0%, #080808 45%, #000000 100%);
+body {
+  background:
+    radial-gradient(circle at 50% 30%, #202020 0%, #080808 45%, #000 100%);
 
-      color: #ddd;
-      font-family: sans-serif;
+  color: #ddd;
+  font-family: sans-serif;
 
-      display: flex;
-      justify-content: center;
-      align-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
-      overflow: hidden;
+  overflow: hidden;
 
-      animation: pageIn 2s ease forwards;
-    }
+  animation: appear 2s ease forwards;
+}
 
-    @keyframes pageIn {
-      from {
-        opacity: 0;
-      }
-      to {
-        opacity: 1;
-      }
-    }
+@keyframes appear {
+  from {
+    opacity: 0;
+  }
 
-    /* 暗転 */
-    #fade {
-      position: fixed;
-      inset: 0;
+  to {
+    opacity: 1;
+  }
+}
 
-      background: #000;
+/* 暗転 */
+#fade {
+  position: fixed;
+  inset: 0;
 
-      opacity: 0;
-      pointer-events: none;
+  background: #000;
 
-      z-index: 999;
+  opacity: 0;
 
-      transition: opacity 2.5s ease;
-    }
+  pointer-events: none;
 
-    #fade.dark {
-      opacity: 1;
-    }
+  z-index: 999;
 
-    /* 不気味な霧 */
-    body::before {
-      content: "";
-      position: fixed;
-      inset: -50%;
+  transition: opacity 2.5s ease;
+}
 
-      background:
-        radial-gradient(
-          circle,
-          rgba(255,255,255,0.04),
-          transparent 35%
-        );
+#fade.dark {
+  opacity: 1;
+}
 
-      animation: fog 12s infinite alternate;
+.container {
+  width: 90%;
+  max-width: 900px;
 
-      pointer-events: none;
-    }
+  text-align: center;
 
-    @keyframes fog {
-      from {
-        transform: translate(-5%, -3%) scale(1);
-      }
+  position: relative;
+  z-index: 1;
+}
 
-      to {
-        transform: translate(5%, 3%) scale(1.15);
-      }
-    }
+/* 上の文字 */
+.binary {
+  font-family: monospace;
 
-    .container {
-      width: 90%;
-      max-width: 900px;
+  font-size: 16px;
+  line-height: 1.8;
 
-      text-align: center;
+  color: #aaa;
 
-      position: relative;
-      z-index: 1;
-    }
+  word-break: break-all;
 
-    .binary {
-      font-family: monospace;
+  margin-bottom: 45px;
 
-      font-size: 16px;
-      line-height: 1.8;
+  text-shadow:
+    0 0 5px #555,
+    0 0 15px #222;
+}
 
-      color: #aaa;
+.title {
+  font-size: 24px;
 
-      word-break: break-all;
+  letter-spacing: 5px;
 
-      margin-bottom: 45px;
+  margin-bottom: 30px;
 
-      text-shadow:
-        0 0 5px #555,
-        0 0 15px #222;
-    }
+  color: #ccc;
 
-    .title {
-      font-size: 24px;
+  text-shadow:
+    0 0 8px #777,
+    0 0 20px #333;
+}
 
-      letter-spacing: 5px;
+input {
+  width: 90%;
+  max-width: 500px;
 
-      margin-bottom: 30px;
+  padding: 15px;
 
-      color: #ccc;
+  background: rgba(0, 0, 0, 0.7);
 
-      text-shadow:
-        0 0 8px #777,
-        0 0 20px #333;
-    }
+  border: 1px solid #555;
+  border-radius: 4px;
 
-    input {
-      width: 90%;
-      max-width: 500px;
+  color: white;
 
-      padding: 15px;
+  font-size: 18px;
 
-      background: rgba(0, 0, 0, 0.7);
+  text-align: center;
 
-      border: 1px solid #555;
-      border-radius: 4px;
+  outline: none;
+}
 
-      color: white;
+input:focus {
+  border-color: #aaa;
 
-      font-size: 18px;
+  box-shadow:
+    0 0 15px rgba(255,255,255,0.15);
+}
 
-      text-align: center;
+button {
+  margin-top: 15px;
 
-      outline: none;
-    }
+  padding: 12px 35px;
 
-    input:focus {
-      border-color: #aaa;
+  background: #111;
 
-      box-shadow:
-        0 0 15px rgba(255,255,255,0.15);
-    }
+  color: #ddd;
 
-    button {
-      margin-top: 15px;
+  border: 1px solid #555;
 
-      padding: 12px 35px;
+  border-radius: 4px;
 
-      background: #111;
+  font-size: 16px;
 
-      color: #ddd;
+  cursor: pointer;
+}
 
-      border: 1px solid #555;
+button:hover {
+  background: #222;
 
-      border-radius: 4px;
+  box-shadow:
+    0 0 15px rgba(255,255,255,0.15);
+}
 
-      font-size: 16px;
+#message {
+  margin-top: 20px;
 
-      cursor: pointer;
-    }
+  min-height: 25px;
 
-    button:hover {
-      background: #222;
+  color: #999;
+}
 
-      box-shadow:
-        0 0 15px rgba(255,255,255,0.15);
-    }
-
-    #message {
-      margin-top: 20px;
-      min-height: 25px;
-      color: #999;
-    }
-
-    .error {
-      color: #a66 !important;
-    }
-  </style>
+.error {
+  color: #a66 !important;
+}
+</style>
 </head>
 
 <body>
 
-  <div id="fade"></div>
+<div id="fade"></div>
 
-  <div class="container">
+<div class="container">
 
-    <div class="binary">
-      11100011 10000001 10001101
-      11100011 10000010 10001000
-      11100011 10000001 10000110
-      11100011 10000001 10101111
-      11100011 10000001 10101011
-      11100011 10000001 10011000
-      11100011 10000001 10001100
-      11100011 10000001 10001101
-      11100011 10000010 10001100
-      11100011 10000001 10000100
-    </div>
-
-    <div class="title">
-      答えを入力してください
-    </div>
-
-    <input
-      type="text"
-      id="answer"
-      placeholder="答えを入力..."
-      autocomplete="off"
-    >
-
-    <br>
-
-    <button onclick="checkAnswer()">
-      入力
-    </button>
-
-    <div id="message"></div>
-
+  <div class="binary">
+    11100011 10000001 10001101
+    11100011 10000010 10001000
+    11100011 10000001 10000110
+    11100011 10000001 10101111
+    11100011 10000001 10101011
+    11100011 10000001 10011000
+    11100011 10000001 10001100
+    11100011 10000001 10001101
+    11100011 10000010 10001100
+    11100011 10000001 10000100
   </div>
 
+  <div class="title">
+    答えを入力してください
+  </div>
 
-  <script>
+  <input
+    type="text"
+    id="answer"
+    placeholder="答えを入力..."
+    autocomplete="off"
+  >
 
-    /*
-      正解のSHA-256ハッシュ
+  <br>
 
-      元の答え：
-      きようはにじがきれい
+  <button onclick="checkAnswer()">
+    入力
+  </button>
 
-      → SHA-256
-    */
-    const correctHash =
-      "c51146399ac31cba6523f02fd0d1e30e566c6a258f13eae8e0af7b6de81cca39";
+  <div id="message"></div>
+
+</div>
+
+<script>
+
+/*
+  正解「あさひがのぼるそらよ」のSHA-256
+*/
+const correctHash =
+  "fd198c394d5527f473e7a7a1e107dff6ba1550139db53591f60db7ce8525241e";
 
 
-    async function sha256(text) {
+async function sha256(text) {
 
-      const encoder = new TextEncoder();
+  const data =
+    new TextEncoder().encode(text);
 
-      const data = encoder.encode(text);
+  const hashBuffer =
+    await crypto.subtle.digest("SHA-256", data);
 
-      const hashBuffer =
-        await crypto.subtle.digest("SHA-256", data);
+  const hashArray =
+    Array.from(new Uint8Array(hashBuffer));
 
-      const hashArray =
-        Array.from(new Uint8Array(hashBuffer));
+  return hashArray
+    .map(byte =>
+      byte.toString(16).padStart(2, "0")
+    )
+    .join("");
+}
 
-      return hashArray
-        .map(byte => byte.toString(16).padStart(2, "0"))
-        .join("");
 
+async function checkAnswer() {
+
+  const answer =
+    document.getElementById("answer").value;
+
+  const fade =
+    document.getElementById("fade");
+
+  const message =
+    document.getElementById("message");
+
+  const inputHash =
+    await sha256(answer);
+
+
+  if (inputHash === correctHash) {
+
+    /* 正解しても文字は表示しない */
+
+    fade.classList.add("dark");
+
+    setTimeout(() => {
+
+      window.location.href = "next.html";
+
+    }, 2500);
+
+  }
+
+  else {
+
+    message.textContent =
+      "……違うようだ。";
+
+    message.className =
+      "error";
+
+  }
+}
+
+
+/* Enterキーでも入力可能 */
+
+document
+  .getElementById("answer")
+  .addEventListener("keydown", function(event) {
+
+    if (event.key === "Enter") {
+      checkAnswer();
     }
 
+  });
 
-    async function checkAnswer() {
-
-      const answer =
-        document.getElementById("answer").value;
-
-      const fade =
-        document.getElementById("fade");
-
-      const message =
-        document.getElementById("message");
-
-
-      /*
-        入力された答えをハッシュ化
-      */
-      const inputHash =
-        await sha256(answer);
-
-
-      /*
-        ハッシュ同士を比較
-      */
-      if (inputHash === correctHash) {
-
-        /*
-          正解しても「正解！」とは表示しない
-          そのままゆっくり暗転
-        */
-        fade.classList.add("dark");
-
-
-        /*
-          完全に暗くなったら次のページへ
-        */
-        setTimeout(() => {
-
-          window.location.href = "next.html";
-
-        }, 2500);
-
-
-      } else {
-
-        message.textContent =
-          "……違うようだ。";
-
-        message.className =
-          "error";
-
-      }
-
-    }
-
-
-    /*
-      Enterキーでも回答できる
-    */
-    document
-      .getElementById("answer")
-      .addEventListener("keydown", function(event) {
-
-        if (event.key === "Enter") {
-
-          checkAnswer();
-
-        }
-
-      });
-
-  </script>
+</script>
 
 </body>
 </html>
