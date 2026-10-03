@@ -2,12 +2,54 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>謎解き</title>
+  <style>
+    body {
+      background: #111;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    input {
+      padding: 12px;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin-left: 5px;
+    }
+    #result {
+      margin-top: 20px;
+    }
+  </style>
 </head>
 <body>
-
-  <h1>謎解き</h1>
-  <p>ここから謎解きが始まります。</p>
-
+  <h1>第1問</h1>
+  <p>11100011 10000001 10001101 11100011 10000010 10001000 11100011 10000001 10000110 11100011 10000001 10101111 11100011 10000001 10101011 11100011 10000001 10011000 11100011 10000001 10001100 11100011 10000001 10001101 11100011 10000010 10001100 11100011 10000001 10000100。</p>
+  <input id="answer" type="text" placeholder="答えを入力">
+  <button onclick="checkAnswer()">回答</button>
+  <p id="result"></p>
+  <script>
+    async function sha256(text) {
+      const data = new TextEncoder().encode(text);
+      const hash = await crypto.subtle.digest("SHA-256", data);
+      return [...new Uint8Array(hash)]
+        .map(b => b.toString(16).padStart(2, "0"))
+        .join("");
+    }
+    async function checkAnswer() {
+      const answer = document.getElementById("answer").value.trim();
+      const hash = await sha256(answer);
+      if (hash === "c51146399ac31cba6523f02fd0d1e30e566c6a258f13eae8e0af7b6de81cca39") {
+        document.getElementById("result").textContent = "正解！";
+      } else {
+        document.getElementById("result").textContent = "不正解";
+      }
+    }
+  </script>
 </body>
 </html>
