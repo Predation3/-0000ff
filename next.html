@@ -8,9 +8,13 @@
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0">
 
-  <title>次の謎</title>
+  <title></title>
 
   <style>
+
+    * {
+      box-sizing: border-box;
+    }
 
     html,
     body {
@@ -22,7 +26,14 @@
 
       background: #000;
 
-      color: white;
+      overflow: hidden;
+
+    }
+
+
+    /* ページが暗闇からゆっくり現れる */
+
+    body {
 
       opacity: 0;
 
@@ -44,11 +55,118 @@
     }
 
 
-    .content {
+    /* ドットを置く場所 */
+
+    #dots {
+
+      position: fixed;
+
+      inset: 0;
+
+      width: 100%;
+      height: 100%;
+
+    }
+
+
+    /* 普通のドット */
+
+    .dot {
+
+      position: absolute;
+
+      width: 5px;
+      height: 5px;
+
+      border-radius: 50%;
+
+      background: #aaa;
+
+      opacity: 0.55;
+
+      cursor: pointer;
+
+      transition:
+        opacity 0.2s,
+        transform 0.2s;
+
+    }
+
+
+    .dot:hover {
+
+      opacity: 1;
+
+      transform: scale(1.5);
+
+    }
+
+
+    /* コピー用ドット */
+
+    .copy-dot {
+
+      background: #aaa;
+
+    }
+
+
+    /* ヒント用ドット */
+
+    .hint-dot {
+
+      background: #aaa;
+
+    }
+
+
+    /* ヒント */
+
+    #hint {
+
+      position: fixed;
+
+      left: 50%;
+      top: 50%;
+
+      transform: translate(-50%, -50%);
+
+      width: 85%;
+
+      max-width: 600px;
+
+      padding: 25px;
+
+      background: rgba(0, 0, 0, 0.9);
+
+      border: 1px solid #555;
+
+      color: #ccc;
 
       text-align: center;
 
-      padding-top: 100px;
+      font-size: 18px;
+
+      line-height: 1.8;
+
+      letter-spacing: 1px;
+
+      opacity: 0;
+
+      pointer-events: none;
+
+      transition: opacity 1s ease;
+
+      z-index: 10;
+
+    }
+
+
+    #hint.show {
+
+      opacity: 1;
+
+      pointer-events: auto;
 
     }
 
@@ -59,13 +177,194 @@
 
 <body>
 
-  <div class="content">
 
-    <h1>次の謎へ</h1>
+  <div id="dots"></div>
 
-    <p>ここから次の問題が始まる。</p>
+
+  <div id="hint">
+
+    さっきの文字を0から9まで当てはめてみよう
 
   </div>
+
+
+  <script>
+
+
+    const dots = document.getElementById("dots");
+
+
+    /*
+      ドットの数
+    */
+
+    const dotCount = 45;
+
+
+    /*
+      どのドットが特殊か
+
+      0番 → コピー
+      1番 → ヒント
+    */
+
+    const copyDotNumber = 0;
+
+    const hintDotNumber = 1;
+
+
+    /*
+      コピーされる文字列
+    */
+
+    const secretText =
+      "がじいにがよきがいがじはきにがよはにうにれれじにじじよははうきうきれはいいいじれがだきよじだれよれきじれにだはだだだじよにれにははによがはようよれうれにがきにがいがにきれうきがじきいにはきうきいれきがにははききじにれじにいだきだれれきうだいじよにじじははにきだよううじれいじがよじれきだよよがはだきがはいうじががきはじよよがれじにれだれがきいよよににれだににいれはににきだれはれいがだいにきがよにだじうれにがいはういよはうれにいはにははだきにがようれきじれれうよはにいにきがはがじれがじじじよによれににだうはうだきがれにだにいじがだじれはいがががじだじきがよじよだにようにいがきうだよよだだうはきににいうだれよれはきじれじういれきよれよだうがじははよれだがう";
+
+
+    /*
+      ランダムにドットを配置
+    */
+
+    for (let i = 0; i < dotCount; i++) {
+
+      const dot = document.createElement("div");
+
+      dot.classList.add("dot");
+
+
+      /*
+        画面の端に行きすぎないように配置
+      */
+
+      const x =
+        Math.random() * 96 + 2;
+
+      const y =
+        Math.random() * 96 + 2;
+
+
+      dot.style.left = x + "%";
+
+      dot.style.top = y + "%";
+
+
+      /*
+        コピー用ドット
+      */
+
+      if (i === copyDotNumber) {
+
+        dot.classList.add("copy-dot");
+
+        dot.addEventListener("click", copySecret);
+
+      }
+
+
+      /*
+        ヒント用ドット
+      */
+
+      else if (i === hintDotNumber) {
+
+        dot.classList.add("hint-dot");
+
+        dot.addEventListener("click", showHint);
+
+      }
+
+
+      /*
+        その他のドット
+      */
+
+      else {
+
+        dot.addEventListener("click", () => {
+
+          /*
+            普通のドットを押しても
+            何も起こらない
+          */
+
+        });
+
+      }
+
+
+      dots.appendChild(dot);
+
+    }
+
+
+    /*
+      コピー処理
+    */
+
+    async function copySecret() {
+
+      try {
+
+        await navigator.clipboard.writeText(secretText);
+
+      }
+
+      catch (error) {
+
+        /*
+          Clipboard APIが使えない場合の予備処理
+        */
+
+        const textarea =
+          document.createElement("textarea");
+
+        textarea.value = secretText;
+
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+
+        document.body.appendChild(textarea);
+
+        textarea.select();
+
+        document.execCommand("copy");
+
+        textarea.remove();
+
+      }
+
+    }
+
+
+    /*
+      ヒントを表示
+    */
+
+    function showHint() {
+
+      const hint =
+        document.getElementById("hint");
+
+      hint.classList.add("show");
+
+    }
+
+
+    /*
+      ヒントをクリックすると消す
+    */
+
+    document
+      .getElementById("hint")
+      .addEventListener("click", function() {
+
+        this.classList.remove("show");
+
+      });
+
+
+  </script>
+
 
 </body>
 
