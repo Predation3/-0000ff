@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>レトロ謎解き</title>
+  <title>w7ls</title>
 
   <!-- レトロ・ピクセルフォント（Press Start 2P） -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -136,14 +136,6 @@
     </div>
   </div>
 
-  <!-- 正解後オーバーレイ -->
-  <div id="nextPage" class="overlay" aria-hidden="true">
-    <div class="box">
-      <h2>次のページへ</h2>
-      <p>光が昇り、空が開けます…（ここに次のコンテンツを入れてください）</p>
-    </div>
-  </div>
-
   <!-- 偽答用デコイオーバーレイ（1回目の表示→タップで2回目メッセージに変化） -->
   <div id="decoy" class="overlay" aria-hidden="true">
     <div class="box" id="decoyBox" role="button" tabindex="0" aria-pressed="false">
@@ -176,9 +168,9 @@
       binEl.animate([{opacity:1},{opacity:0.7},{opacity:1}],{duration:900,iterations:1});
     });
 
-    // タイトルも1文字ずつ出す
+    // タイトルも1文字ずつ出す（変更: 「何が見える？」）
     const titleEl = document.getElementById('title');
-    typeText(titleEl, "答えを入力してください", 28);
+    typeText(titleEl, "何が見える？", 28);
 
     // --- 正解はバイナリを UTF-8 としてデコードして作る（ソースに平文を残さない） ---
     // binarySource はスペース区切りの8ビット列なのでそれを Uint8Array にして TextDecoder で復元
@@ -226,7 +218,6 @@
     const btn = document.getElementById("submitBtn");
     const msg = document.getElementById("message");
     const page = document.getElementById("page");
-    const nextPage = document.getElementById("nextPage");
     const decoy = document.getElementById("decoy");
     const decoyBox = document.getElementById("decoyBox");
     const decoyTitle = document.getElementById("decoyTitle");
@@ -237,26 +228,26 @@
       msg.style.color = isError ? getComputedStyle(document.documentElement).getPropertyValue('--danger') : getComputedStyle(document.documentElement).getPropertyValue('--accent');
     }
 
-    // フェードアウトしてオーバーレイ表示
-    function fadeToOverlay(isReal){
+    // フェードアウトして next.html に遷移（正解時）
+    function fadeToNextHtml(){
       page.classList.add("fade-out");
+      // フェード時間に合わせて遷移（0.8s アニメーションに合わせて 800ms）
       setTimeout(() => {
-        if(isReal){
-          nextPage.classList.add("show");
-          nextPage.setAttribute("aria-hidden","false");
-        } else {
-          decoy.classList.add("show");
-          decoy.setAttribute("aria-hidden","false");
-          // 初期メッセージ（偽答時）
-          decoyTitle.textContent = "AIにでも頼った？笑😛";
-          decoyBody.textContent = "（タップして続きを見る）";
-          // 初期状態は false
-          decoyBox.setAttribute("data-tapped","false");
-        }
-      }, 700);
+        // 実際の遷移先を next.html に設定
+        window.location.href = "next.html";
+      }, 820);
     }
 
-    // 偽答のタップ動作: 1回目タップでメッセージ切替、2回目以降は何もしない（または閉じる）
+    // 偽答用: オーバーレイ表示
+    function showDecoy(){
+      decoy.classList.add("show");
+      decoy.setAttribute("aria-hidden","false");
+      decoyTitle.textContent = "AIにでも頼った？笑😛";
+      decoyBody.textContent = "（タップして続きを見る）";
+      decoyBox.setAttribute("data-tapped","false");
+    }
+
+    // 偽答のタップ動作: 1回目タップでメッセージ切替、2回目以降で閉じる
     function handleDecoyTap(){
       const tapped = decoyBox.getAttribute("data-tapped") === "true";
       if(!tapped){
@@ -264,10 +255,9 @@
         decoyBody.textContent = "（もう一度タップして閉じる）";
         decoyBox.setAttribute("data-tapped","true");
       } else {
-        // 閉じる（再挑戦可能に）
         decoy.classList.remove("show");
         decoy.setAttribute("aria-hidden","true");
-        // 再表示のためフォームをリセット
+        // フォーム再開
         input.disabled = false;
         btn.disabled = false;
         input.value = "";
@@ -293,18 +283,17 @@
       if(val === normalizeStr(CORRECT)){
         showMessage("正解です。次のページへ移動します…", false);
         btn.disabled = true; input.disabled = true;
-        fadeToOverlay(true);
+        fadeToNextHtml();
         return;
       }
 
       // 偽答チェック（その場で平文配列で大量用意している）
-      // 比較はそのまま（NFKC 正規化済み）
       const matchedFake = fakeAnswers.some(f => normalizeStr(f) === val);
       if(matchedFake){
         showMessage("ちょっと待って…", false);
         btn.disabled = true; input.disabled = true;
-        // 表示を少し遅らせてデコイへ
-        setTimeout(() => fadeToOverlay(false), 400);
+        // 少し遅らせてデコイを表示
+        setTimeout(() => showDecoy(), 360);
         return;
       }
 
@@ -323,13 +312,20 @@
     btn.addEventListener("click", handleSubmit);
     input.addEventListener("keydown", (e) => { if(e.key === "Enter") handleSubmit(); });
 
-    // セキュリティ（AI対策）メモ:
-    // - 正答の平文はソースに直接含めておらず、ページ上の binary data をデコードして実行時に生成しています。
-    // - こうすることで、ソースをぱっと見ただけで平文を探すのが難しくなります（ただしバイナリから復元可能な点には注意）。
-    // - さらに難読化したい場合は、binary の並びを分割して DOM の別要素に分散したり、暗号化しておく等の追加手段があります。
+    // バイナリのクリックで選択しやすくする
+    binEl.addEventListener("click", function(){
+      const range = document.createRange();
+      range.selectNodeContents(this);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
 
     // フォーカス調整
     setTimeout(() => input.focus(), 1200);
+
+    // デバッグログ（必要なければ削除）
+    console.log("Decoded correct answer (runtime):", CORRECT);
   </script>
 </body>
 </html>
