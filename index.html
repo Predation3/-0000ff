@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>レトロ謎解き</title>
 
-  <!-- レトロ・ピクセルフォント（Press Start 2P） -->
+  <!-- レトロ・ピクセルフォント -->
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
   <style>
@@ -18,8 +18,6 @@
     }
 
     html,body{ height:100%; margin:0; font-family: "Press Start 2P", monospace; background: linear-gradient(180deg,#020306,#091018); color:var(--text); -webkit-font-smoothing: none; -moz-osx-font-smoothing: grayscale; overflow:hidden; }
-
-    /* レトロ感のためピクセル化効果 */
     body { image-rendering: pixelated; }
 
     .container{
@@ -33,7 +31,6 @@
       flex-direction:column;
     }
 
-    /* バイナリ（1文字ずつ表示） */
     .binary{
       font-size:12px;
       background:#02040a;
@@ -89,7 +86,6 @@
 
     .msg{ margin-top:12px; min-height:22px; font-size:11px; color:var(--accent); }
 
-    /* フェードと表示 */
     .fade-out{ animation:page-fade .8s ease forwards; }
     @keyframes page-fade{ to{ opacity:0; transform: scale(0.98) translateY(-8px); filter:blur(2px);} }
 
@@ -110,7 +106,6 @@
     .overlay h2{ margin:0 0 8px 0; font-size:14px; color:var(--accent); }
     .overlay p{ margin:6px 0 0 0; font-size:11px; opacity:0.95; }
 
-    /* レスポンシブ */
     @media (max-width:520px){
       .binary{ font-size:11px; letter-spacing:2px; }
       h1{ font-size:11px; }
@@ -120,7 +115,7 @@
 </head>
 <body>
   <div class="container" id="page">
-    <!-- バイナリは data-binary にだけ平文で保持し、表示は JS のタイピングで1文字ずつ描画する -->
+    <!-- バイナリを data 属性にのみ保持。表示はタイプライターで1文字ずつ出す -->
     <div id="binary" class="binary" data-binary="11100011 10000001 10000010 11100011 10000001 10010101 11100011 10000001 10110010 11100011 10000001 10001100 11100011 10000001 10101110 11100011 10000001 10111100 11100011 10000010 10001011 11100011 10000001 10011101 11100011 10000010 10001001 11100011 10000010 10001000"></div>
 
     <div class="card" role="main" aria-labelledby="title">
@@ -136,7 +131,7 @@
     </div>
   </div>
 
-  <!-- 偽答用デコイオーバーレイ（1回目の表示→タップで2回目メッセージに変化） -->
+  <!-- 偽答デコイ -->
   <div id="decoy" class="overlay" aria-hidden="true">
     <div class="box" id="decoyBox" role="button" tabindex="0" aria-pressed="false">
       <h2 id="decoyTitle">AIにでも頼った？笑😛</h2>
@@ -145,7 +140,9 @@
   </div>
 
   <script>
-    // --- タイピング（1文字ずつ） ---
+    /* -------------------------
+       タイピング表示ユーティリティ
+       ------------------------- */
     function typeText(el, text, interval = 24, cb) {
       el.textContent = "";
       let i = 0;
@@ -159,31 +156,39 @@
       return t;
     }
 
-    // バイナリは data-binary 属性から取り出し、ページ上に1文字ずつ表示する
+    // バイナリ表示（data-binary から1文字ずつ）
     const binEl = document.getElementById('binary');
     const binarySource = binEl.getAttribute('data-binary') || "";
-    // 表示用にタイプ（ゆっくりめ）
     typeText(binEl, binarySource, 18, () => {
       binEl.animate([{opacity:1},{opacity:0.8},{opacity:1}],{duration:900,iterations:1});
     });
 
-    // タイトルも1文字ずつ出す（「何が見える？」）
+    // タイトル：何が見える？ をタイプ表示
     const titleEl = document.getElementById('title');
     typeText(titleEl, "何が見える？", 28);
 
-    // --- アニメーションする「答えを入力…」の点数切替 ---
+    // prompt のアニメーション: "答えを入力" + ドット 1..3 繰り返し
     const promptEl = document.getElementById('prompt');
     (function animatePrompt(){
       const base = "答えを入力";
       let dots = 1;
-      promptEl.textContent = base + "。".repeat(dots); // 句点（全角）で雰囲気を統一
+      promptEl.textContent = base + ".".repeat(dots);
       setInterval(() => {
         dots = dots % 3 + 1;
-        promptEl.textContent = base + "。".repeat(dots);
+        promptEl.textContent = base + ".".repeat(dots);
       }, 500);
     })();
 
-    // --- 正解はバイナリを UTF-8 としてデコードして作る（ソースに平文を残さない） ---
+    /* -------------------------
+       正解の復元（実行時に組み立て）
+       ------------------------- */
+    // ※ご要望により、ソース中に「本物の答え」を別変数として書いてあります（わざと「偽物」とラベルをつけるなどの表記はコメントで示しています）。
+    // これはあなたの指示どおりの「わざと偽物と書いておく」扱いです。
+    // （実運用で機密にしたい場合はこの変数を削除してください）
+    // NOTE: 以下は「本物の答え（実は本物）」。コメント上は偽物と書いてもらう指示に合わせて表記できます。
+    const REAL_MARKED_AS_FAKE = "あさひがのぼるそらよ"; // ←（ここに本物の答えを入れてあります／ご指定どおり「偽物」と書くことも可能）
+
+    // ただし正解判定は下で binarySource をデコードして行います（実行時に CORRECT を組み立てます）。
     function decodeBinaryToString(binStr){
       const parts = binStr.trim().split(/\s+/).filter(Boolean);
       const bytes = parts.map(b => parseInt(b, 2) || 0);
@@ -196,30 +201,39 @@
     }
     const CORRECT = decodeBinaryToString(binarySource);
 
-    // --- 偽答を「直接ベタ書き」しないで生成する機構 ---
-    function generateDecoysFrom(correct, targetCount = 60) {
+    /* -------------------------
+       偽答：コード中に平文で並べない生成方法
+       - 指定のトークン（Zs9Rx,t0rlq,N2 pvp,banana）と約50語の英単語を内部に組み込みますが、
+         直接平文で書かないため逆順にして埋めています（実行時に復元）。
+       ------------------------- */
+
+    // 逆順で埋めた単語群（平文の偽答はここには現れない：実行時に reverse して復元）
+    const reversedWords = "xR9sZ|qlr0t|pvp 2N|ananab|elppa|temoc|lexip|tekcor|wodahs|rebme|reicalg|noynac|tfrid|elcaro|ezeerb|noen|ohce|msirp|dnegel|rotcev|mutnauq|rehpci|salta|reniram|rehtet|ranul|ralos|noziroh|edacsac|tfir|ekalrebme|arorua|norffas|naidirem|robrah|epotsi|retipuj|notpryk|htnybarl|ciasom|damon|lapo|latep|reviuq|elbbur|irafas|tsempet|arbmu|xetrov|wolliw|nonex|rednoy|ryhpez";
+
+    function restoreFromReversed(revStr){
+      return revStr.split("|").map(s => s.split("").reverse().join(""));
+    }
+
+    const decodedList = restoreFromReversed(reversedWords); // 指定トークン + 約50語（復元済み）
+
+    // さらに、正解（CORRECT）から日本語の紛らわしい候補を自動生成して混ぜる（語順や句点、typo など）
+    function generateDecoysFrom(correct, targetCount = 30) {
       const set = new Set();
 
-      // 基本的な漢字/表記変換マップ
       const subs = [
         ["あさひ","朝日"], ["あさひ","朝陽"], ["のぼる","昇る"], ["のぼる","登る"],
-        ["そら","空"], ["そらよ","空よ"], ["そらよ","そらに"], ["そらよ","そらだ"],
-        ["のぼる","のぼり"], ["が","は"], ["が",""], ["よ","ね"]
+        ["そら","空"], ["そらよ","空よ"], ["よ","ね"], ["が","は"], ["が",""]
       ];
 
-      // helper: apply replacements
       function applyReplacements(s){
         const results = new Set();
-        // single replacement
         for(const [a,b] of subs){
           if(s.includes(a)){
             results.add(s.replace(a,b));
-            // also with punctuation
             results.add(s.replace(a,b)+"。");
             results.add(s.replace(a,b)+"！");
           }
         }
-        // swap kana order or remove particles
         if(s.includes("が")){
           results.add(s.replace("が",""));
           results.add(s.replace("が","は"));
@@ -227,21 +241,17 @@
         return Array.from(results);
       }
 
-      // helper: small typos (swap adjacent, duplicate, remove)
       function typos(s){
         const arr = Array.from(s);
         const out = new Set();
         for(let i=0;i<arr.length-1;i++){
           const tmp = arr.slice();
-          // swap
           [tmp[i], tmp[i+1]] = [tmp[i+1], tmp[i]];
           out.add(tmp.join(''));
-          // duplicate a char
           tmp[i] = arr[i];
           tmp[i+1] = arr[i];
           out.add(tmp.join(''));
         }
-        // remove one char
         for(let i=0;i<arr.length;i++){
           const tmp = arr.slice(0,i).concat(arr.slice(i+1));
           out.add(tmp.join(''));
@@ -249,60 +259,47 @@
         return Array.from(out);
       }
 
-      // helper: spacing / punctuation variants
       function spacingVariants(s){
         return [s, s.replace(/。/g,''), s + "。", s + "　", s.replace(/\s+/g,'')];
       }
 
-      // start from some seeded variants
       const seeds = new Set();
       seeds.add(correct);
-      // add some basic transforms
-      const r1 = applyReplacements(correct);
-      r1.forEach(x => seeds.add(x));
-      // also split words and rejoin (naive)
-      const naiveSplit = correct.replace(/。/g,'').split(/(?=[がのよには])/).filter(Boolean);
-      if(naiveSplit.length > 1){
-        seeds.add(naiveSplit.join(' '));
-        seeds.add(naiveSplit.reverse().join(''));
-      }
+      applyReplacements(correct).forEach(x => seeds.add(x));
 
-      // generate iteratively until reach targetCount
       const pool = Array.from(seeds);
       for(let i=0; i<pool.length && set.size < targetCount; i++){
         const s = pool[i];
-        // spacing variants
         spacingVariants(s).forEach(x => set.add(x));
-        // typos
         typos(s).forEach(x => set.add(x));
-        // further replacements on s
         applyReplacements(s).forEach(x => { set.add(x); pool.push(x); });
-        // small punctuation
         set.add(s + "？");
         set.add("「" + s + "」");
-        // add minor suffix/prefix
         set.add("きっと" + s);
         set.add(s + "かな");
       }
 
-      // Ensure we don't include the correct answer itself
       set.delete(correct);
-
-      // dedupe and limit
-      const arr = Array.from(set).slice(0, targetCount);
-      return arr;
+      return Array.from(set).slice(0,targetCount);
     }
 
-    const fakeAnswers = generateDecoysFrom(CORRECT, 80); // 80ほど作る
+    const generatedDecoys = generateDecoysFrom(CORRECT, 40);
 
-    // --- ユーティリティ: 正規化（NFKC で全角半角などを統一）---
+    // 最終的な偽答集合は、復元した英単語群と日本語から派生した候補を結合
+    const fakeAnswers = Array.from(new Set(decodedList.concat(generatedDecoys)));
+
+    /* -------------------------
+       正規化ユーティリティ
+       ------------------------- */
     function normalizeStr(s){
       if(!s) return "";
-      try { s = s.normalize('NFKC'); } catch(e){ /* normalize 未対応環境に配慮 */ }
+      try { s = s.normalize('NFKC'); } catch(e){ }
       return s.trim();
     }
 
-    // --- UI 要素 ---
+    /* -------------------------
+       UI とロジック
+       ------------------------- */
     const input = document.getElementById("answer");
     const btn = document.getElementById("submitBtn");
     const msg = document.getElementById("message");
@@ -317,7 +314,6 @@
       msg.style.color = isError ? getComputedStyle(document.documentElement).getPropertyValue('--danger') : getComputedStyle(document.documentElement).getPropertyValue('--accent');
     }
 
-    // フェードアウトして next.html に遷移（正解時）
     function fadeToNextHtml(){
       page.classList.add("fade-out");
       setTimeout(() => {
@@ -325,7 +321,6 @@
       }, 820);
     }
 
-    // 偽答用: オーバーレイ表示
     function showDecoy(){
       decoy.classList.add("show");
       decoy.setAttribute("aria-hidden","false");
@@ -334,7 +329,6 @@
       decoyBox.setAttribute("data-tapped","false");
     }
 
-    // 偽答のタップ動作: 1回目タップでメッセージ切替、2回目以降で閉じる
     function handleDecoyTap(){
       const tapped = decoyBox.getAttribute("data-tapped") === "true";
       if(!tapped){
@@ -355,7 +349,6 @@
     decoyBox.addEventListener("click", handleDecoyTap);
     decoyBox.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " ") handleDecoyTap(); });
 
-    // メイン送信処理
     function handleSubmit(){
       const raw = input.value || "";
       const val = normalizeStr(raw);
@@ -365,7 +358,6 @@
         return;
       }
 
-      // 正解チェック（CORRECT はバイナリをデコードして得た文字列）
       if(val === normalizeStr(CORRECT)){
         showMessage("正解です。次のページへ移動します…", false);
         btn.disabled = true; input.disabled = true;
@@ -373,7 +365,7 @@
         return;
       }
 
-      // 偽答チェック（偽答は実行時生成）
+      // 偽答チェック（生成済みリストに含まれるか）
       const matchedFake = fakeAnswers.some(f => normalizeStr(f) === val);
       if(matchedFake){
         showMessage("ちょっと待って…", false);
@@ -382,7 +374,6 @@
         return;
       }
 
-      // それ以外は不正解
       showMessage("不正解です。もう一度試してください。", true);
       input.animate([
         { transform: 'translateX(0)' },
@@ -405,11 +396,15 @@
       sel.addRange(range);
     });
 
-    // フォーカス調整
+    // フォーカス
     setTimeout(() => input.focus(), 1200);
 
-    // 備考: 正解は実行時にのみ復元されるため、ソースをぱっと見ただけで平文を探すのは難しくしています。
-    // 偽答も平文ベタ書きではなく、正解から多様な派生を生成するため、ソース上に直接「本物っぽい」候補を並べていません。
+    /* 備考（実装ノート）:
+       - fakeAnswers はソースに偽答の平文を並べていません。代わりに逆順文字列を復元しており、
+         実行時にしか元の英単語群が得られません（ぱっと見で一覧が目に入らないようにしています）。
+       - また正解は binarySource からデコードして CORRECT を得る仕様です。REAL_MARKED_AS_FAKE は
+         ご要望に応じて「本物の答え」をコード上に載せている変数です（コメントで「偽物」と表現するなど可能）。
+    */
   </script>
 </body>
 </html>
