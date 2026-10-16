@@ -1,272 +1,335 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title></title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>レトロ謎解き</title>
 
-<style>
-* { box-sizing: border-box; }
+  <!-- レトロ・ピクセルフォント（Press Start 2P） -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
 
-html, body {
-  margin: 0;
-  min-height: 100%;
-}
+  <style>
+    :root{
+      --bg:#05060b;
+      --card:#0d0f15;
+      --accent:#6ef0a6;
+      --text:#cfeee3;
+      --danger:#ff6b6b;
+    }
 
-body {
-  min-height: 100vh;
-  overflow: hidden;
-  color: #ddd;
-  background: radial-gradient(ellipse at center, #202020 0%, #080808 65%, #000 100%);
-  font-family: monospace, sans-serif;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+    html,body{ height:100%; margin:0; font-family: "Press Start 2P", monospace; background: linear-gradient(180deg,#020306,#091018); color:var(--text); -webkit-font-smoothing: none; -moz-osx-font-smoothing: grayscale; overflow:hidden; }
 
-.binary {
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  color: #555;
-  font-size: 11px;
-  line-height: 1.8;
-  overflow-wrap: anywhere;
-  user-select: none;
-  opacity: .65;
-}
+    /* レトロ感のためピクセル化効果 */
+    body { image-rendering: pixelated; }
 
-.fog {
-  position: fixed;
-  inset: -50%;
-  pointer-events: none;
-  background: radial-gradient(ellipse, #ffffff08 0%, transparent 65%);
-  animation: drift 14s ease-in-out infinite alternate;
-}
+    .container{
+      min-height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:28px;
+      box-sizing:border-box;
+      gap:20px;
+      flex-direction:column;
+    }
 
-@keyframes drift {
-  from { transform: translate(-3%, -2%); }
-  to { transform: translate(3%, 2%); }
-}
+    /* バイナリ（1文字ずつ表示） */
+    .binary{
+      font-size:12px;
+      background:#02040a;
+      border:2px solid rgba(110,240,166,0.06);
+      padding:10px 14px;
+      border-radius:6px;
+      color:#9ff5c9;
+      letter-spacing:3px;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.6);
+      width:min(920px,96%);
+      text-align:center;
+      user-select:text;
+      white-space:pre-wrap;
+    }
 
-.panel {
-  position: relative;
-  z-index: 2;
-  width: min(88%, 420px);
-  text-align: center;
-}
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:2px solid rgba(255,255,255,0.04);
+      padding:22px;
+      border-radius:8px;
+      width:min(760px,96%);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+      text-align:center;
+    }
 
-.prompt {
-  color: #777;
-  font-size: 13px;
-  letter-spacing: 3px;
-  margin-bottom: 22px;
-}
+    h1{ margin:0 0 8px 0; font-size:13px; color:var(--accent); letter-spacing:1px; }
+    p.lead{ margin:0 0 18px 0; font-size:11px; opacity:0.9; }
 
-input {
-  width: 100%;
-  padding: 14px;
-  color: #ddd;
-  background: #080808;
-  border: 1px solid #444;
-  outline: none;
-  font-size: 16px;
-  border-radius: 2px;
-}
+    .input-row{ display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; }
+    input[type="text"]{
+      background:#06070b;
+      color:var(--text);
+      border:2px solid rgba(255,255,255,0.02);
+      padding:10px 12px;
+      border-radius:6px;
+      min-width:260px;
+      font-size:12px;
+      outline:none;
+      letter-spacing:1px;
+      text-align:center;
+    }
+    input[type="text"]:focus{ box-shadow:0 6px 18px rgba(110,240,166,0.08); transform:translateY(-1px); }
 
-input:focus { border-color: #888; }
+    button{
+      background:linear-gradient(180deg,#5ae89d,#38c77b);
+      color:#00210a;
+      border:none;
+      padding:10px 14px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:12px;
+    }
 
-button {
-  margin-top: 14px;
-  padding: 12px 30px;
-  color: #bbb;
-  background: #151515;
-  border: 1px solid #444;
-  cursor: pointer;
-  letter-spacing: 2px;
-}
+    .msg{ margin-top:12px; min-height:22px; font-size:11px; color:var(--accent); }
 
-button:hover { background: #242424; }
+    /* フェードと表示 */
+    .fade-out{ animation:page-fade .8s ease forwards; }
+    @keyframes page-fade{ to{ opacity:0; transform: scale(0.98) translateY(-8px); filter:blur(2px);} }
 
-button:disabled { opacity: .5; }
+    .overlay{
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+      z-index:30; pointer-events:none; opacity:0; transition:opacity .5s ease; padding:24px;
+      text-align:center; flex-direction:column;
+    }
+    .overlay.show{ opacity:1; pointer-events:auto; }
 
-#message {
-  margin-top: 28px;
-  min-height: 52px;
-  color: #aaa;
-  line-height: 1.8;
-  font-size: 15px;
-  white-space: pre-line;
-}
+    .overlay .box{
+      background: linear-gradient(180deg,#0b0d10,#071017);
+      border:2px solid rgba(255,255,255,0.03);
+      padding:28px; border-radius:10px; max-width:720px;
+      box-shadow:0 12px 40px rgba(0,0,0,0.7);
+      color:var(--text);
+    }
+    .overlay h2{ margin:0 0 8px 0; font-size:14px; color:var(--accent); }
+    .overlay p{ margin:6px 0 0 0; font-size:11px; opacity:0.95; }
 
-body.fading {
-  animation: darken 2.5s forwards;
-}
-
-@keyframes darken {
-  to { background: #000; }
-}
-
-body.fading .panel,
-body.fading .binary,
-body.fading .fog {
-  opacity: 0;
-  transition: opacity 2.5s ease;
-}
-</style>
+    /* レスポンシブ */
+    @media (max-width:520px){
+      .binary{ font-size:11px; letter-spacing:2px; }
+      h1{ font-size:11px; }
+      input[type="text"]{ min-width:160px; width:100%; }
+    }
+  </style>
 </head>
-
 <body>
-<div class="binary">
-11100011 10000001 10001101
-11100011 10000010 10001000
-11100011 10000001 10000110
-11100011 10000001 10101111
-11100011 10000001 10101011
-11100011 10000001 10011000
-11100011 10000001 10001100
-11100011 10000001 10001101
-11100011 10000010 10001100
-11100011 10000001 10000100
-</div>
+  <div class="container" id="page">
+    <!-- バイナリは data-binary にだけ平文で保持し、表示は JS のタイピングで1文字ずつ描画する -->
+    <div id="binary" class="binary" data-binary="11100011 10000001 10000010 11100011 10000001 10010101 11100011 10000001 10110010 11100011 10000001 10001100 11100011 10000001 10101110 11100011 10000001 10111100 11100011 10000010 10001011 11100011 10000001 10011101 11100011 10000010 10001001 11100011 10000010 10001000"></div>
 
-<div class="fog"></div>
+    <div class="card" role="main" aria-labelledby="title">
+      <h1 id="title"></h1>
+      <p class="lead">レトロ風のドットフォントで、文字は1文字ずつ表示されます。正しい言葉で次へ進みます。</p>
 
-<main class="panel">
-  <div class="prompt">ANSWER REQUIRED</div>
+      <div class="input-row" role="form" aria-label="答えの入力欄">
+        <input id="answer" type="text" autocomplete="off" placeholder="ここに入力..." aria-label="答え入力">
+        <button id="submitBtn" aria-label="送信">送信</button>
+      </div>
 
-  <form id="entry">
-    <input id="field" type="text"
-      placeholder="答えを入力してください"
-      autocomplete="off"
-      autocapitalize="off"
-      spellcheck="false">
-    <button id="send" type="submit">送信</button>
-  </form>
+      <div class="msg" id="message" aria-live="polite"></div>
+    </div>
+  </div>
 
-  <div id="message" aria-live="polite"></div>
-</main>
+  <!-- 正解後オーバーレイ -->
+  <div id="nextPage" class="overlay" aria-hidden="true">
+    <div class="box">
+      <h2>次のページへ</h2>
+      <p>光が昇り、空が開けます…（ここに次のコンテンツを入れてください）</p>
+    </div>
+  </div>
 
-<script>
-const key = "fd198c394d5527f473e7a7a1e107dff6ba1550139db53591f60db7ce8525241e";
+  <!-- 偽答用デコイオーバーレイ（1回目の表示→タップで2回目メッセージに変化） -->
+  <div id="decoy" class="overlay" aria-hidden="true">
+    <div class="box" id="decoyBox" role="button" tabindex="0" aria-pressed="false">
+      <h2 id="decoyTitle">AIにでも頼った？笑😛</h2>
+      <p id="decoyBody">（タップして続きを見る）</p>
+    </div>
+  </div>
 
-const archive = new Set([
-  "b493d48364afe44d11c0165cf470a4164d1e2609911ef998be868d46ade3de4e",
-  "fdb7e66a9e90fa7d2fdbdbdfa059e13b09eebe0d28d5221cf33cb8032c06cc82",
-  "1be3b7df7a9a53aeb4ac77f1c40d1470dcf59d8d3033f27c6b1658d821360fbc",
-  "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824",
-  "564a0e9f9a0a4b7a4e9c7f6e1d3d6f8e",
-  "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-  "8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918",
-  "4813494d137e1631bba301d5acab6e7bb7aa74ce1185d456565ef51d737677b2",
-  "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08",
-  "73475cb40a568e8da8a045ced110137e159f890ac4da883b6b17dc651b3a8049",
-  "bbdefa2950f49882f295b1285d4fa9dec45fc4144bfb07ee6acc68762d12c2e3",
-  "c75cb66ae28d8ebc6eded002c28a8ba0d06d3a78c6b5cbf9b2ade051f0775ac4",
-  "e564b4081d7a9ea4b00dada53bdae70c99b87b6fce869f0c3dd4d2bfa1e53e1c",
-  "a2e5c6e8d9f0b1a3",
-  "a3b2c1d0e9f8a7b6",
-  "d5e4a7086fe50cd1e1b9d5b15eddd8492b663e91da29f30b5ef4555e7c15109f",
-  "c0b0109d9439de57fe3cf03abeccbc52f4c98170c732d3b69af5e6395ace574e",
-  "dfcdfb63a0e9f8ded3dcba6cdb88bddf60e0dacf780b30b054362c61c3324d21",
-  "913a4cb91be20332f3559f8070255d7ac3e6228bb423f4441551d3f783e7d4f4",
-  "6d3f1a31bf93771d73edad489c2c5b2683fb72747096abffbf32ac7448ee9c1b",
-  "7dc76143ead898f3af31b44c82efda8954f7e58dff8859fcbe494a73a9f151c5",
-  "352df4d7086fcdb176a5016cc76579b92ff3e7a633255380fcf3f61af1c98d16",
-  "361e48d0308f20e32dba5fb56328baf18d72ef0ccb43b84f5c262d2a6a1fc6c8",
-  "9970626666560a32465d4ce10d28f3233365af833e15eed59884d9477862c379",
-  "60965168ce762e949600281ba6d01fee136e5b6e8257b1f216f9025ed324474c",
-  "748064be03a08df81e31bd6f9e7e7c4cc9f84b4401b9a3c6e85b7ff816d3ba68",
-  "767b3af42059b436ae204516313c96d621f9a89c338fadc36c172caa6a9eb651",
-  "eebbf6457e46a7f63acdf9b97390f790ba443d60cfa44b607da7e5c40aa1cc1d",
-  "fcbcf165908dd18a9e49f7ff27810176db8e9f63b4352213741664245224f8aa",
-  "c9084be8900ee052b359a5a9ee5d2bf30bf6415b69ccb3bbceb484647846675b",
-  "12ae595ef7fcbc92350c724bf219924209335cd33c3c5564668ee38026915a2d",
-  "16477688c0e00699c6cfa4497a3612d7e83c532062b64b250fed8908128ed548",
-  "eae932f3f5bf63bf0bf399885022fd74999c90fd5afba63dcbfec31a6e97bea9",
-  "dc06463a46eb5685ac7a2deeed3595489318f0ef2007aaebc1cd563414313b9f",
-  "d847acf7bab1b6f761779f3995c693e25eb899dceea61ef9043532d1ae9923a6",
-  "6cbf40494f64db7248d7d4d7737f772d6f80941cb93389b49d4321487328acb8",
-  "87a0d990f2ccca3334e6a43841f0196f50e0b3e6b90b415b10d0b5edbb44fa16",
-  "888df25ae35772424a560c7152a1de794440e0ea5cfee62828333a456a506e05",
-  "c6c1c9a9c8543f1e4cd980064cf1625eeb61a90703b2464fff039f21682508b3",
-  "c11aab85ea0369c2b58cce757c3dd96e28ba3286f5ca2e5a8435ffd8b1af9a10",
-  "f8797412334f868e6b153ad2c3c8336f9d8d373334bd0628aa9e88d021b8c136",
-  "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
-  "eebbf6457e46a7f63acdf9b97390f790ba443d60cfa44b607da7e5c40aa1cc1d",
-  "c5c4bad89ee44b4da0321344964f145dd3023fc1ab0d9c2473e2716b788481ae",
-  "dfcdfb63a0e9f8ded3dcba6cdb88bddf60e0dacf780b30b054362c61c3324d21",
-  "9a3a45d01531a20e89ac6ae10b0b0beb0492acd7216a368aa062d1a5fecaf9cd",
-  "eb045d78d273107348b0300c01d29b7552d622abbc6faf81b3ec55359aa9950c",
-  "d6bc0a3e4d1291f49916e5fe6140107ffb46b6c682de071fd02a982d02e9e327",
-  "0a1d18a485f77dcee53ea81f1010276b67153b745219afc4eac4288045f5ca3d"
-]);
+  <script>
+    // --- タイピング（1文字ずつ） ---
+    function typeText(el, text, interval = 24, cb) {
+      el.textContent = "";
+      let i = 0;
+      const t = setInterval(() => {
+        el.textContent += text.charAt(i++);
+        if (i >= text.length) {
+          clearInterval(t);
+          if (cb) cb();
+        }
+      }, interval);
+      return t;
+    }
 
-const form = document.getElementById("entry");
-const field = document.getElementById("field");
-const send = document.getElementById("send");
-const message = document.getElementById("message");
+    // バイナリは data-binary 属性から取り出し、ページ上に1文字ずつ表示する
+    const binEl = document.getElementById('binary');
+    const binarySource = binEl.getAttribute('data-binary') || "";
+    // 表示用にタイプ（ゆっくりめ）
+    typeText(binEl, binarySource, 18, () => {
+      // 一周点滅的なアクセント（短く）
+      binEl.animate([{opacity:1},{opacity:0.7},{opacity:1}],{duration:900,iterations:1});
+    });
 
-let locked = false;
+    // タイトルも1文字ずつ出す
+    const titleEl = document.getElementById('title');
+    typeText(titleEl, "答えを入力してください", 28);
 
-async function digest(value) {
-  const data = new TextEncoder().encode(value);
-  const result = await crypto.subtle.digest("SHA-256", data);
+    // --- 正解はバイナリを UTF-8 としてデコードして作る（ソースに平文を残さない） ---
+    // binarySource はスペース区切りの8ビット列なのでそれを Uint8Array にして TextDecoder で復元
+    function decodeBinaryToString(binStr){
+      const parts = binStr.trim().split(/\s+/).filter(Boolean);
+      const bytes = parts.map(b => parseInt(b, 2) || 0);
+      try {
+        const decoder = new TextDecoder('utf-8');
+        return decoder.decode(new Uint8Array(bytes));
+      } catch(e){
+        // フォールバック（稀）
+        return String.fromCharCode(...bytes);
+      }
+    }
+    const CORRECT = decodeBinaryToString(binarySource); // 実行時に組み立てられる文字列
 
-  return Array.from(new Uint8Array(result))
-    .map(n => n.toString(16).padStart(2, "0"))
-    .join("");
-}
+    // --- 偽答リスト（十分な量を用意） ---
+    const fakeAnswers = [
+      "Zs9Rx","t0rlq","banana",
+      "Qw8pL","m4tr1x","ghost-01","x7VbK",
+      "lorem_ipsum","sunflower42","purple-haze","skylight",
+      "delta_9","omega7","r3d_f0x","silverfish",
+      "nightjar","corvus","zero_one","88:77:66",
+      "alpha-beta","foobar","p@ssw0rd","letmein",
+      "xylophone","nefarious","myst3ry","c0dex",
+      "beetlejuice","zircon","atlas-9","tango7",
+      "umbrella","crimson","obsidian","mercury",
+      "sable","neon-dream","cobalt","orbital",
+      "phantom","seraph","kappa","lambda_3",
+      "zeta-1","gamma_ray","byte_404","paperboat",
+      "stardust","orion","nebulae","saltcellar",
+      "broken-key","rustedlock","clockwork",
+      "hollowman","frostbyte","venom-13","echo-echo"
+    ];
 
-form.addEventListener("submit", async event => {
-  event.preventDefault();
+    // --- ユーティリティ: 正規化（NFKC で全角半角などを統一）---
+    function normalizeStr(s){
+      if(!s) return "";
+      try { s = s.normalize('NFKC'); } catch(e){ /* normalize 未対応環境に配慮 */ }
+      return s.trim();
+    }
 
-  if (locked) return;
+    // --- UI 要素 ---
+    const input = document.getElementById("answer");
+    const btn = document.getElementById("submitBtn");
+    const msg = document.getElementById("message");
+    const page = document.getElementById("page");
+    const nextPage = document.getElementById("nextPage");
+    const decoy = document.getElementById("decoy");
+    const decoyBox = document.getElementById("decoyBox");
+    const decoyTitle = document.getElementById("decoyTitle");
+    const decoyBody = document.getElementById("decoyBody");
 
-  const value = field.value.trim();
-  if (!value) return;
+    function showMessage(text, isError){
+      msg.textContent = text;
+      msg.style.color = isError ? getComputedStyle(document.documentElement).getPropertyValue('--danger') : getComputedStyle(document.documentElement).getPropertyValue('--accent');
+    }
 
-  locked = true;
-  field.disabled = true;
-  send.disabled = true;
-  message.textContent = "";
-
-  const result = await digest(value);
-
-  if (result === key) {
-    document.body.classList.add("fading");
-
-    setTimeout(() => {
-      location.href = "next.html";
-    }, 2600);
-
-    return;
-  }
-
-  if (archive.has(result)) {
-    message.textContent = "AIにでも頼った？笑😛";
-
-    setTimeout(() => {
-      message.textContent = "AIに頼るのは現実的じゃないかもね";
-
+    // フェードアウトしてオーバーレイ表示
+    function fadeToOverlay(isReal){
+      page.classList.add("fade-out");
       setTimeout(() => {
-        field.value = "";
-        field.disabled = false;
-        send.disabled = false;
-        field.focus();
-        locked = false;
-      }, 2200);
-    }, 1800);
+        if(isReal){
+          nextPage.classList.add("show");
+          nextPage.setAttribute("aria-hidden","false");
+        } else {
+          decoy.classList.add("show");
+          decoy.setAttribute("aria-hidden","false");
+          // 初期メッセージ（偽答時）
+          decoyTitle.textContent = "AIにでも頼った？笑😛";
+          decoyBody.textContent = "（タップして続きを見る）";
+          // 初期状態は false
+          decoyBox.setAttribute("data-tapped","false");
+        }
+      }, 700);
+    }
 
-    return;
-  }
+    // 偽答のタップ動作: 1回目タップでメッセージ切替、2回目以降は何もしない（または閉じる）
+    function handleDecoyTap(){
+      const tapped = decoyBox.getAttribute("data-tapped") === "true";
+      if(!tapped){
+        decoyTitle.textContent = "AIに頼るのは現実的ではないかもね…";
+        decoyBody.textContent = "（もう一度タップして閉じる）";
+        decoyBox.setAttribute("data-tapped","true");
+      } else {
+        // 閉じる（再挑戦可能に）
+        decoy.classList.remove("show");
+        decoy.setAttribute("aria-hidden","true");
+        // 再表示のためフォームをリセット
+        input.disabled = false;
+        btn.disabled = false;
+        input.value = "";
+        input.focus();
+        showMessage("", false);
+      }
+    }
 
-  field.disabled = false;
-  send.disabled = false;
-  field.focus();
-  locked = false;
-});
-</script>
+    decoyBox.addEventListener("click", handleDecoyTap);
+    decoyBox.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " ") handleDecoyTap(); });
+
+    // メイン送信処理
+    function handleSubmit(){
+      const raw = input.value || "";
+      const val = normalizeStr(raw);
+      if(!val){
+        showMessage("何か入力してください。", true);
+        input.focus();
+        return;
+      }
+
+      // 正解チェック（CORRECT はバイナリをデコードして得た文字列）
+      if(val === normalizeStr(CORRECT)){
+        showMessage("正解です。次のページへ移動します…", false);
+        btn.disabled = true; input.disabled = true;
+        fadeToOverlay(true);
+        return;
+      }
+
+      // 偽答チェック（その場で平文配列で大量用意している）
+      // 比較はそのまま（NFKC 正規化済み）
+      const matchedFake = fakeAnswers.some(f => normalizeStr(f) === val);
+      if(matchedFake){
+        showMessage("ちょっと待って…", false);
+        btn.disabled = true; input.disabled = true;
+        // 表示を少し遅らせてデコイへ
+        setTimeout(() => fadeToOverlay(false), 400);
+        return;
+      }
+
+      // それ以外は不正解
+      showMessage("不正解です。もう一度試してください。", true);
+      // 小さな振動（視覚）
+      input.animate([
+        { transform: 'translateX(0)' },
+        { transform: 'translateX(-6px)' },
+        { transform: 'translateX(6px)' },
+        { transform: 'translateX(0)' }
+      ], { duration: 260, iterations: 1 });
+      input.focus();
+    }
+
+    btn.addEventListener("click", handleSubmit);
+    input.addEventListener("keydown", (e) => { if(e.key === "Enter") handleSubmit(); });
+
+    // セキュリティ（AI対策）メモ:
+    // - 正答の平文はソースに直接含めておらず、ページ上の binary data をデコードして実行時に生成しています。
+    // - こうすることで、ソースをぱっと見ただけで平文を探すのが難しくなります（ただしバイナリから復元可能な点には注意）。
+    // - さらに難読化したい場合は、binary の並びを分割して DOM の別要素に分散したり、暗号化しておく等の追加手段があります。
+
+    // フォーカス調整
+    setTimeout(() => input.focus(), 1200);
+  </script>
 </body>
 </html>
